@@ -19,3 +19,43 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "50051:50051"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9092
+
+  inventory-service:
+    build: ./inventory-service
+    ports:
+      - "50052:50052"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9092
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "50053:50053"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BROKER=kafka:9092
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - order-service
+      - inventory-service
+      - notification-service
+    environment:
+      - ORDER_SERVICE_URL=order-service:50051
+      - INVENTORY_SERVICE_URL=inventory-service:50052
+      - NOTIFICATION_SERVICE_URL=notification-service:50053
