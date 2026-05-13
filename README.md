@@ -223,3 +223,5 @@ cd api-gateway && node index.js
 | better-sqlite3 | Base de données SQL |
 | RxDB | Base de données NoSQL |
 | Docker Compose | Orchestration Kafka + Zookeeper |
+---
+*Projet réalisé dans le cadre du cours SoA et Microservices 
