@@ -211,6 +211,64 @@ cd api-gateway && node index.js
 
 ---
 
+## Intégration n8n
+
+### Rôle de n8n
+n8n est un outil d’automatisation no-code/low-code qui permet d’orchestrer des tâches métiers entre plusieurs systèmes. Dans ce projet, il sert de couche d’automatisation autour du parcours de commande pour déclencher le traitement via l’API Gateway et renvoyer une confirmation structurée.
+
+### Workflow automatisé
+Le workflow n8n expose un webhook HTTP qui reçoit un `POST` avec les données suivantes :
+
+```json
+{
+  "product_id": "p1",
+  "quantity": 2,
+  "customer": "lotfi",
+  "email": "manelsouissii78@gmail.com"
+}
+```
+
+Le scénario est le suivant :
+1. n8n reçoit la requête entrante sur le webhook.
+2. n8n appelle `POST /orders` sur l’API Gateway pour créer la commande.
+3. L’API Gateway relaie la demande au `OrderService` via gRPC.
+4. `OrderService` publie ensuite l’événement Kafka `order.placed` pour synchroniser `InventoryService` et `NotificationService`.
+5. n8n renvoie une réponse de confirmation contenant :
+
+```json
+{
+  "status": "success",
+  "customer": "lotfi",
+  "email_sent_to": "manelsouissii78@gmail.com",
+  "message": "Commande confirmée et workflow automatisé exécuté avec succès."
+}
+```
+
+### Installation et exécution
+Pour utiliser n8n dans ce projet :
+1. Installer n8n localement ou le lancer via Docker.
+2. Importer le workflow documenté dans le dossier `n8n/`.
+3. Vérifier que l’API Gateway est accessible sur `http://localhost:3000`.
+4. Démarrer le webhook n8n, puis envoyer une requête `POST` vers l’URL exposée par le workflow.
+
+Exemple d’appel vers le webhook n8n :
+
+```bash
+curl -X POST <url-du-webhook-n8n> \
+  -H "Content-Type: application/json" \
+  -d '{"product_id":"p1","quantity":2,"customer":"lotfi","email":"manelsouissii78@gmail.com"}'
+```
+
+### Valeur métier
+n8n apporte plusieurs bénéfices concrets :
+- réduction du code d’orchestration côté backend,
+- automatisation rapide des confirmations de commande,
+- meilleure traçabilité des étapes du workflow,
+- intégration facilitée avec d’autres outils métiers,
+- possibilité de faire évoluer les scénarios sans modifier fortement les microservices.
+
+---
+
 ## Stack technique
 
 | Technologie | Rôle |

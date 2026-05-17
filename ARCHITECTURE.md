@@ -68,3 +68,44 @@ Contenu du message order.placed :
 | NotificationService | 50053 | gRPC      |
 | Kafka Broker        | 9092  | TCP       |
 | Zookeeper           | 2181  | TCP       |
+
+
+## Architecture avec couche d'automatisation n8n
+
+```mermaid
+flowchart TB
+  Client[Client]
+
+  subgraph Core[Coeur microservices]
+    direction TB
+    Gateway[API Gateway\nREST + GraphQL\nport 3000]
+
+    subgraph Sync[gRPC synchrone]
+      direction LR
+      OrderSvc[OrderService\nport 50051\nSQLite3]
+      InventorySvc[InventoryService\nport 50052\nSQLite3]
+      NotificationSvc[NotificationService\nport 50053\nRxDB]
+    end
+
+    Kafka[(Kafka broker\ntopic: order.placed)]
+
+    Gateway -->|REST /orders| OrderSvc
+    Gateway -->|gRPC| InventorySvc
+    Gateway -->|gRPC| NotificationSvc
+    OrderSvc -->|publie| Kafka
+    Kafka -->|consomme| InventorySvc
+    Kafka -->|consomme| NotificationSvc
+  end
+
+  subgraph Automation[Couche d'automatisation n8n]
+    direction TB
+    Webhook[n8n Webhook]
+    Confirm[n8n confirmation response]
+    Webhook -->|POST /orders| Gateway
+    Gateway --> Confirm
+  end
+
+  Client --> Webhook
+```
+
+La couche n8n a été ajoutée pour automatiser l'orchestration du parcours de commande sans complexifier les microservices eux-mêmes. Elle apporte une intégration plus rapide des scénarios métiers, une meilleure souplesse pour faire évoluer le workflow de confirmation et une séparation nette entre la logique d'automatisation et la logique métier centrale.
